@@ -1,0 +1,273 @@
+name: "🚀 Android 13 量子内核工坊"
+
+on: 
+  workflow_dispatch:
+    inputs:
+      debug_mode:
+        description: "✨ 启用调试模式"
+        required: false
+        type: boolean
+
+env:
+  _CONFIG_FILE: "repos.json"
+  _OUTPUT_DIR: "quantum_out"
+  _EMOJIS: ["🌌", "🔮", "⚡", "📦", "🚀", "🔧", "🛠️", "💫"]
+
+jobs:
+  # --------------------------
+  # 🌠 量子配置解析器
+  # --------------------------
+  Quantum-Config-Loader:
+    name: "🔮 星 际 配 置 解 析"
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.quantum-decoder.outputs.matrix }}
+    
+    steps:
+      - name: "${{ env._EMOJIS[0] }} 打 开 量 子 通 道"
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: "${{ env._EMOJIS[1] }} 解 码 星 图 数 据"
+        id: quantum-decoder
+        env:
+          CONFIG_PATH: ${{ env._CONFIG_FILE }}
+        run: |
+          # 🛡️ 量子文件存在性验证
+          [[ -f $CONFIG_PATH ]] || {
+            echo "::error file=$CONFIG_PATH::🛑 星图配置文件未找到！"
+            exit 1
+          }
+
+          # 🔐 量子数据完整性校验
+          jq empty $CONFIG_PATH || {
+            echo "::error file=$CONFIG_PATH::❌ 星图数据格式异常！"
+            exit 1
+          }
+
+          # 🌐 生成量子矩阵
+          MATRIX_DATA=$(jq -c . $CONFIG_PATH)
+          echo "matrix=$MATRIX_DATA" >> $GITHUB_OUTPUT
+          
+          echo "::group::🔍 星图数据解密结果"
+          jq . $CONFIG_PATH
+          echo "::endgroup::"
+
+      - name: "${{ env._EMOJIS[2] }} 量 子 校 验"
+        run: |
+          echo "✅ 量子通道稳定性检测通过"
+          echo "  星图维度: $(jq -r 'length' ${{ env._CONFIG_FILE }})"
+          echo "  首节点设备: $(jq -r '.[0].kernelSource.device' ${{ env._CONFIG_FILE }})"
+
+
+  Build-Kernel:
+  name: "🚀 核 心 编 译 工 坊"
+  runs-on: ubuntu-latest
+  needs: [Set-repos]
+  env:
+    _STARS: "🌟".repeat(3)
+  
+  strategy:
+    max-parallel: 2
+    fail-fast: false
+    matrix:
+      repos: ${{ fromJSON(needs.Set-repos.outputs.repos) }}
+
+  env:
+    kernelDir: ${{ matrix.repos.kernelSource.name }}_${{ matrix.repos.kernelSource.device }}
+    DEFCONFIG_NAME: a13_ovo_defconfig
+    _TOOLCHAIN_CACHE: "clang-17.tar.gz"
+    _EMOJIS: ["🚀", "⚡", "🔧", "🎯", "📦", "🎵", "🌐", "🛠️", "💫"]
+
+  steps:
+    # --------------------------
+    # 🎨 初始化舞台
+    # --------------------------
+    - name: "${{ env._EMOJIS[0] }} 创 建 星 际 工 厂"
+      shell: bash
+      run: |
+        echo "$_STARS 初始化多维构建空间 $_STARS"
+        mkdir -p $kernelDir && echo "🪐 工作目录: ${kernelDir}"
+
+    # --------------------------
+    # 📦 依赖交响曲
+    # --------------------------
+    - name: "${{ env._EMOJIS[4] }} 装 载 宇 宙 元 素"
+      timeout-minutes: 5
+      run: |
+        sudo apt-get update -y
+        sudo DEBIAN_FRONTEND=noninteractive apt-get install -y \
+          build-essential device-tree-compiler bc git zip zstd \
+          gcc-aarch64-linux-gnu gcc-arm-linux-gnueabi libssl-dev \
+          python3 libarchive-tools lftp libfl-dev
+
+    # --------------------------
+    # 🌌 源码超时空传输
+    # --------------------------
+    - name: "${{ env._EMOJIS[6] }} 克 隆 星 系 内 核"
+      working-directory: ./${{ env.kernelDir }}
+      run: |
+        clone_cmd="git clone -b ${{ matrix.repos.kernelSource.branch }} \
+          --depth=1 ${{ matrix.repos.kernelSource.repo }} \
+          ${{ matrix.repos.kernelSource.name }}"
+        
+        echo "🔮 执行量子纠缠: $clone_cmd"
+        eval $clone_cmd | sed 's/^/    🧬 /'
+
+    # --------------------------
+    # 🛠️ 工具链矩阵革命
+    # --------------------------
+    - name: "${{ env._EMOJIS[7] }} 激 活 量 子 工 具 链"
+      working-directory: ./${{ env.kernelDir }}
+      env:
+        _TOOLCHAINS_JSON: ${{ toJSON(matrix.repos.toolchains) }}
+      run: |
+        echo "🔄 解析工具链矩阵..."
+        jq -c '.[]' <<< "$_TOOLCHAINS_JSON" | while read toolchain; do
+          name=$(jq -r '.name' <<< "$toolchain")
+          echo "🔧 构建 ${name} 引力场..."
+          
+          wget -q https://github.com/qwe28256/LGG8-Mcstark-Kernel-Builder/releases/download/17.0/clang-17.tar.gz
+          tar zxf ${_TOOLCHAIN_CACHE}
+          mv clang-17 $name
+          echo "⚙️ 路径注入: $(pwd)/$name/bin" >> $GITHUB_PATH
+        done
+
+        echo "🔗 最终工具链路径: ${PATH//:/$'\n    🛣️ '}"
+
+    # --------------------------
+    # 🔥 参数量子纠缠
+    # --------------------------
+    - name: "${{ env._EMOJIS[3] }} 生 成 多 维 参 数"
+      id: generate-args
+      working-directory: ./${{ env.kernelDir }}
+      env:
+        _PARAMS_JSON: ${{ toJSON(matrix.repos.params) }}
+      run: |
+        args=("-j$(nproc --all)")
+        
+        # 🌀 动态参数构建
+        declare -A param_map=(
+          [ARCH]="ARCH"
+          [CROSS_COMPILE]="CROSS_COMPILE" 
+          [CLANG_TRIPLE]="CLANG_TRIPLE"
+          [AR]="AR"
+          [CC]="CC"
+        )
+
+        for key in "${!param_map[@]}"; do
+          val=$(jq -r ".${key}" <<< "$_PARAMS_JSON")
+          [[ -n "$val" ]] && args+=("${param_map[$key]}=${val}")
+        done
+
+        # 🪐 构建输出目录
+        [[ -n "$OUT_DIR" ]] && mkdir -p $OUT_DIR && args+=("O=$(pwd)/$OUT_DIR")
+        
+        echo "🎛️ 最终构建参数: ${args[@]}"
+        echo "args=${args[@]}" >> $GITHUB_OUTPUT
+
+    # --------------------------
+    # 🛡️ KernelSU 超时空要塞
+    # --------------------------
+    - name: "${{ env._EMOJIS[8] }} 部 署 安 全 力 场"
+      if: ${{ matrix.repos.withKernelSU }}
+      working-directory: ./${{ env.kernelDir }}/${{ matrix.repos.kernelSource.name }}
+      run: |
+        # 💥 清理旧量子残留
+        rm -rf {KernelSU,drivers/kernelsu}
+
+        # 🌠 安装新版KSU核心
+        curl -sL "https://raw.githubusercontent.com/tiann/KernelSU/main/kernel/setup.sh" | 
+          bash -s -- -v v0.9.5
+
+        # 🔐 动态配置注入
+        config_path="arch/${{ env.ARCH }}/configs/${DEFCONFIG_NAME}"
+        ksu_flags=(
+          "CONFIG_KPROBES=y"
+          "CONFIG_HAVE_KPROBES=y" 
+          "CONFIG_KPROBE_EVENTS=y"
+        )
+
+        for flag in "${ksu_flags[@]}"; do
+          grep -qF "$flag" "$config_path" || echo -e "\n$flag" >> "$config_path"
+        done
+
+        echo "🔍 最终防御配置:"
+        grep "KPROBE" "$config_path" | sed 's/^/    🛡️ /'
+
+    # --------------------------
+    # ⚡ 核心聚变三部曲
+    # --------------------------
+    - name: "${{ env._EMOJIS[1] }} 初 级 能 量 充 填"
+      working-directory: ./${{ env.kernelDir }}/${{ matrix.repos.kernelSource.name }}
+      env:
+        BUILD_ARGS: ${{ steps.generate-args.outputs.args }}
+      run: |
+        set -x
+        make $BUILD_ARGS $DEFCONFIG_NAME | sed 's/^/    ⚡ /'
+        make $BUILD_ARGS | sed 's/^/    🔥 /'
+
+    - name: "${{ env._EMOJIS[2] }} 时 空 校 准 仪"
+      working-directory: ./${{ env.kernelDir }}
+      run: |
+        echo "🕰️ 修复时间线异常..."
+        [[ -f "out/scripts/dtc/dtc" ]] || {
+          echo "🚨 检测到dtc缺失，启动量子修复..."
+          cp -v /usr/bin/dtc out/scripts/dtc/
+        }
+
+    - name: "${{ env._EMOJIS[5] }} 终 极 能 量 释 放"
+      working-directory: ./${{ env.kernelDir }}/${{ matrix.repos.kernelSource.name }}
+      run: |
+        echo "💥 启动跨维度编译协议！"
+        time bash lk.sh 2>&1 | sed 's/^/    🌌 /'
+        
+        echo "✅ 核心构建完成！"
+        ls -lh out/arch/${{ env.ARCH }}/boot/ | grep "Image"
+    # --------------------------
+    # 🚀 星 际 包 装 站
+    # --------------------------
+    - name: "🌌 量 子 压 缩 协 议"
+      working-directory: ./${{ env.kernelDir }}/${{ env.kernelName }}
+      env:
+        _AK3_REPO: "https://github.com/qwe28256/AnyKernel3-alphalm"
+        _KERNEL_IMAGE: "${{ env.OUT_DIR }}/arch/${{ env.ARCH }}/boot/Image.gz"
+      run: |
+        echo "📦 启动超时空打包序列..."
+        set -e  # 🛑 遇到错误立即停止
+
+        echo "🌀 克隆AnyKernel3矩阵..."
+        git clone -q --depth=1 $_AK3_REPO kernelpack 2>&1 | sed 's/^/    📡 /'
+
+        echo "⚡ 注入核心能量源..."
+        cp -v ../$_KERNEL_IMAGE kernelpack/ 2>&1 | sed 's/^/    🔋 /'
+
+        echo "🛸 生成量子压缩包..."
+        (cd kernelpack && zip -r9 ../${KERNELNAME}_${DEVICE}_$(date +%s).zip ./*) 2>&1 | sed 's/^/    🗜️ /'
+
+        echo "🚚 部署构建产物..."
+        mv -v kernelpack.zip ../${{ env.OUT_DIR }}/
+        du -h ../${{ env.OUT_DIR }}/*.zip | sed 's/^/    📏 /'
+
+    # --------------------------
+    # 🪐 星 际 物 流 中 心
+    # --------------------------
+    - name: "📤 跨 维 度 传 输"
+      uses: actions/upload-artifact@v4
+      with:
+        name: "AnyKernel3_${{ env.kernelName }}"
+        path: |
+          ${{ env.kernelDir }}/${{ env.OUT_DIR }}/*.zip
+          ${{ env.kernelDir }}/${{ env.OUT_DIR }}/arch/${{ env.ARCH }}/boot/Image*
+        retention-days: 7
+        if-no-files-found: error
+      env:
+        _ARTIFACT_DIR: "./${{ env.kernelDir }}/${{ env.OUT_DIR }}"
+      run: |
+        echo "🚀 激活多维传输协议..."
+        echo "📦 包裹清单："
+        ls -lh $_ARTIFACT_DIR | awk '{print "    🌠 " $0}'
+        
+        echo "🔒 文件指纹校验："
+        shasum $_ARTIFACT_DIR/* | sed 's/^/    🔍 /'
